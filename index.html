@@ -1,770 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RAiA V15 - Regulatory Dossier Assistant</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-VWp6PvBf+WWfXOXSc2saBjVy3pr9YON6feg/7N9EQKObg2AJxrs1/4yVgyxu6EXkAfL7dt5hQS78RHefFz+DYg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.13.216/pdf.min.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; font-family: 'Inter', sans-serif; color: #1a202c; background: #f7fafc; }
-    
-    /* System Limitations Banner */
-    .system-banner {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 0.75rem 1.5rem;
-      text-align: center;
-      font-size: 0.9rem;
-      font-weight: 500;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
-    .system-banner i { margin-right: 0.5rem; }
-    
-    .app { display: flex; height: calc(100% - 45px); }
-    
-    /* Sidebar with Workflow Groups */
-    .sidebar {
-      width: 260px;
-      background: linear-gradient(180deg, #2d3748 0%, #1a202c 100%);
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      box-shadow: 2px 0 8px rgba(0,0,0,0.1);
-    }
-    .sidebar-header {
-      padding: 1.5rem 1rem;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    .sidebar-header h1 {
-      font-family: 'Merriweather', serif;
-      font-size: 1.3rem;
-      margin-bottom: 0.25rem;
-      color: #fff;
-    }
-    .sidebar-header .version {
-      font-size: 0.75rem;
-      color: #a0aec0;
-      font-weight: 400;
-    }
-    
-    .workflow-section {
-      padding: 1rem 0;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    .workflow-section:last-child { border-bottom: none; }
-    .workflow-title {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #a0aec0;
-      padding: 0 1rem;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-    }
-    
-    .nav-item {
-      display: flex;
-      align-items: center;
-      padding: 0.7rem 1rem;
-      margin: 0.25rem 0.5rem;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 0.9rem;
-      color: #cbd5e0;
-      position: relative;
-    }
-    .nav-item i {
-      margin-right: 0.75rem;
-      width: 20px;
-      text-align: center;
-      font-size: 1rem;
-    }
-    .nav-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
-    .nav-item.active {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #fff;
-      box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
-    }
-    .nav-item.completed::after {
-      content: '\f00c';
-      font-family: 'Font Awesome 6 Free';
-      font-weight: 900;
-      position: absolute;
-      right: 0.75rem;
-      color: #48bb78;
-      font-size: 0.85rem;
-    }
-    
-    /* Progress Indicator */
-    .progress-indicator {
-      padding: 1rem;
-      background: rgba(255,255,255,0.05);
-      margin: 0.5rem;
-      border-radius: 6px;
-    }
-    .progress-indicator .label {
-      font-size: 0.75rem;
-      color: #a0aec0;
-      margin-bottom: 0.5rem;
-    }
-    .progress-bar-container {
-      height: 6px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-    .progress-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #48bb78 0%, #38a169 100%);
-      border-radius: 3px;
-      transition: width 0.3s ease;
-    }
-    .progress-stats {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 0.5rem;
-      font-size: 0.75rem;
-    }
-    .progress-stats span { color: #e2e8f0; }
-    
-    /* Content Area */
-    .content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 2rem;
-      background: #f7fafc;
-    }
-    
-    .page { display: none; }
-    .page.active { display: block; }
-    
-    .page-header {
-      margin-bottom: 2rem;
-      padding-bottom: 1rem;
-      border-bottom: 2px solid #e2e8f0;
-    }
-    .page-header h1 {
-      font-family: 'Merriweather', serif;
-      font-size: 2rem;
-      color: #2d3748;
-      margin-bottom: 0.5rem;
-    }
-    .page-header p {
-      color: #718096;
-      font-size: 0.95rem;
-      line-height: 1.6;
-    }
-    
-    /* Cards */
-    .card {
-      background: #fff;
-      border-radius: 8px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-      border: 1px solid #e2e8f0;
-    }
-    .card-header {
-      font-weight: 600;
-      font-size: 1.1rem;
-      margin-bottom: 1rem;
-      color: #2d3748;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .card-header i { margin-right: 0.5rem; color: #667eea; }
-    
-    /* Status Cards */
-    .status-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    .status-card {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 1.5rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2);
-    }
-    .status-card.success { background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); }
-    .status-card.warning { background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); }
-    .status-card.danger { background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%); }
-    .status-card .label {
-      font-size: 0.85rem;
-      opacity: 0.9;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-    }
-    .status-card .value {
-      font-size: 2rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .status-card .value i { font-size: 1.5rem; }
-    
-    /* Buttons */
-    .button {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.65rem 1.25rem;
-      font-size: 0.9rem;
-      font-weight: 500;
-      border-radius: 6px;
-      border: none;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #fff;
-      cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
-    }
-    .button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-    }
-    .button:active { transform: translateY(0); }
-    .button.secondary {
-      background: #718096;
-      box-shadow: 0 2px 4px rgba(113, 128, 150, 0.2);
-    }
-    .button.secondary:hover { box-shadow: 0 4px 8px rgba(113, 128, 150, 0.3); }
-    .button.success { background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); }
-    .button.danger { background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%); }
-    .button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
-    
-    /* Form Elements */
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 1.25rem;
-    }
-    .input-group label {
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-      color: #2d3748;
-      font-size: 0.9rem;
-    }
-    .input-group input, .input-group select, .input-group textarea {
-      padding: 0.65rem 0.75rem;
-      border: 1.5px solid #cbd5e0;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      transition: all 0.2s;
-      font-family: 'Inter', sans-serif;
-    }
-    .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-    .input-group textarea { min-height: 120px; resize: vertical; }
-    
-    /* CTD Mapping - Drag & Drop Interface */
-    .ctd-mapping-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-      min-height: 500px;
-    }
-    
-    .file-pool {
-      background: #fff;
-      border: 2px dashed #cbd5e0;
-      border-radius: 8px;
-      padding: 1rem;
-      overflow-y: auto;
-      max-height: 600px;
-    }
-    .file-pool-header {
-      font-weight: 600;
-      margin-bottom: 1rem;
-      color: #2d3748;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .file-pool-header .count {
-      background: #667eea;
-      color: white;
-      padding: 0.25rem 0.75rem;
-      border-radius: 12px;
-      font-size: 0.85rem;
-    }
-    
-    .file-item {
-      background: #f7fafc;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 6px;
-      padding: 0.75rem;
-      margin-bottom: 0.5rem;
-      cursor: grab;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-    .file-item:hover {
-      border-color: #667eea;
-      background: #edf2f7;
-      transform: translateX(4px);
-    }
-    .file-item.dragging {
-      opacity: 0.5;
-      cursor: grabbing;
-    }
-    .file-item i {
-      color: #667eea;
-      font-size: 1.2rem;
-    }
-    .file-item .file-name {
-      flex: 1;
-      font-size: 0.9rem;
-      color: #2d3748;
-      font-weight: 500;
-    }
-    .file-item .file-size {
-      font-size: 0.75rem;
-      color: #718096;
-    }
-    
-    .ctd-tree {
-      background: #fff;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 1rem;
-      overflow-y: auto;
-      max-height: 600px;
-    }
-    .ctd-node {
-      margin-bottom: 0.5rem;
-    }
-    .ctd-node-header {
-      padding: 0.75rem;
-      background: #edf2f7;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      border: 2px solid transparent;
-    }
-    .ctd-node-header:hover {
-      background: #e2e8f0;
-    }
-    .ctd-node-header.drop-target {
-      border-color: #667eea;
-      background: #ebf4ff;
-    }
-    .ctd-node-header .expand-icon {
-      color: #718096;
-      font-size: 0.8rem;
-      transition: transform 0.2s;
-    }
-    .ctd-node-header.expanded .expand-icon {
-      transform: rotate(90deg);
-    }
-    .ctd-node-header .node-name {
-      flex: 1;
-      font-weight: 500;
-      color: #2d3748;
-      font-size: 0.9rem;
-    }
-    .ctd-node-header .file-count {
-      background: #667eea;
-      color: white;
-      padding: 0.2rem 0.6rem;
-      border-radius: 10px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-    .ctd-node-children {
-      margin-left: 1.5rem;
-      margin-top: 0.5rem;
-      display: none;
-    }
-    .ctd-node-children.expanded {
-      display: block;
-    }
-    .ctd-node-files {
-      margin-left: 1.5rem;
-      margin-top: 0.5rem;
-    }
-    .mapped-file {
-      background: #f7fafc;
-      border-left: 3px solid #48bb78;
-      padding: 0.5rem 0.75rem;
-      margin-bottom: 0.25rem;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .mapped-file i {
-      color: #48bb78;
-      font-size: 0.9rem;
-    }
-    .mapped-file .remove {
-      margin-left: auto;
-      color: #e53e3e;
-      cursor: pointer;
-      font-size: 0.85rem;
-    }
-    
-    /* Findings Dashboard */
-    .findings-dashboard {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-    .findings-filters {
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .findings-filters select, .findings-filters input {
-      padding: 0.5rem 0.75rem;
-      border: 1.5px solid #cbd5e0;
-      border-radius: 6px;
-      font-size: 0.9rem;
-    }
-    
-    .severity-section {
-      margin-bottom: 1.5rem;
-    }
-    .severity-header {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-      padding: 0.75rem;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .severity-header.critical { background: #fff5f5; border-left: 4px solid #e53e3e; }
-    .severity-header.major { background: #fffaf0; border-left: 4px solid #ed8936; }
-    .severity-header.minor { background: #f0fff4; border-left: 4px solid #48bb78; }
-    .severity-header .icon {
-      font-size: 1.5rem;
-    }
-    .severity-header.critical .icon { color: #e53e3e; }
-    .severity-header.major .icon { color: #ed8936; }
-    .severity-header.minor .icon { color: #48bb78; }
-    .severity-header .title {
-      flex: 1;
-      font-weight: 600;
-      font-size: 1.1rem;
-      color: #2d3748;
-    }
-    .severity-header .count {
-      background: white;
-      padding: 0.25rem 0.75rem;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-    .severity-header.critical .count { color: #e53e3e; }
-    .severity-header.major .count { color: #ed8936; }
-    .severity-header.minor .count { color: #48bb78; }
-    
-    .findings-list {
-      display: none;
-      gap: 1rem;
-    }
-    .findings-list.expanded {
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .finding-card {
-      background: white;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 1.25rem;
-      transition: all 0.2s;
-    }
-    .finding-card:hover {
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      border-color: #cbd5e0;
-    }
-    .finding-header {
-      display: flex;
-      align-items: start;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-    .finding-id {
-      background: #edf2f7;
-      padding: 0.25rem 0.75rem;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      color: #4a5568;
-    }
-    .finding-message {
-      flex: 1;
-      font-weight: 500;
-      color: #2d3748;
-      line-height: 1.5;
-    }
-    .finding-category {
-      background: #667eea;
-      color: white;
-      padding: 0.25rem 0.75rem;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
-    .finding-body {
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid #e2e8f0;
-    }
-    .finding-evidence {
-      background: #f7fafc;
-      border-left: 3px solid #667eea;
-      padding: 0.75rem;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      color: #4a5568;
-      font-family: 'Courier New', monospace;
-      margin-bottom: 0.75rem;
-    }
-    .finding-meta {
-      display: flex;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-      font-size: 0.85rem;
-      color: #718096;
-      margin-bottom: 0.75rem;
-    }
-    .finding-meta i { margin-right: 0.25rem; color: #a0aec0; }
-    .finding-actions {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 1rem;
-    }
-    .finding-actions button {
-      font-size: 0.85rem;
-      padding: 0.4rem 0.75rem;
-    }
-    
-    /* Explainability Panel */
-    .explainability-panel {
-      background: #ebf8ff;
-      border: 1px solid #90cdf4;
-      border-radius: 6px;
-      padding: 1rem;
-      margin-top: 0.75rem;
-      display: none;
-    }
-    .explainability-panel.visible { display: block; }
-    .explainability-panel h4 {
-      color: #2c5282;
-      margin-bottom: 0.75rem;
-      font-size: 0.95rem;
-    }
-    .explainability-panel .detail {
-      margin-bottom: 0.5rem;
-      font-size: 0.85rem;
-      color: #2d3748;
-    }
-    .explainability-panel .detail strong {
-      color: #2c5282;
-    }
-    
-    /* Onboarding Tour */
-    .onboarding-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.7);
-      z-index: 9999;
-      display: none;
-      align-items: center;
-      justify-content: center;
-    }
-    .onboarding-overlay.active { display: flex; }
-    .onboarding-tooltip {
-      background: white;
-      border-radius: 8px;
-      padding: 2rem;
-      max-width: 500px;
-      box-shadow: 0 20px 25px rgba(0,0,0,0.3);
-      position: relative;
-    }
-    .onboarding-tooltip h3 {
-      color: #2d3748;
-      margin-bottom: 1rem;
-      font-size: 1.3rem;
-    }
-    .onboarding-tooltip p {
-      color: #4a5568;
-      line-height: 1.6;
-      margin-bottom: 1.5rem;
-    }
-    .onboarding-tooltip .progress {
-      font-size: 0.85rem;
-      color: #718096;
-      margin-bottom: 1rem;
-    }
-    .onboarding-actions {
-      display: flex;
-      gap: 0.75rem;
-      justify-content: flex-end;
-    }
-    
-    /* Modal */
-    .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.6);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-    }
-    .modal.visible { display: flex; }
-    .modal-content {
-      background: white;
-      border-radius: 8px;
-      max-width: 600px;
-      width: 90%;
-      max-height: 90vh;
-      overflow-y: auto;
-      padding: 2rem;
-      box-shadow: 0 20px 25px rgba(0,0,0,0.3);
-    }
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.5rem;
-    }
-    .modal-header h3 {
-      font-size: 1.3rem;
-      color: #2d3748;
-    }
-    .modal-close {
-      font-size: 1.5rem;
-      color: #718096;
-      cursor: pointer;
-      background: none;
-      border: none;
-    }
-    
-    /* Toast */
-    .toast-container {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      z-index: 3000;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-    .toast {
-      background: white;
-      padding: 1rem 1.25rem;
-      border-radius: 8px;
-      box-shadow: 0 10px 15px rgba(0,0,0,0.2);
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      min-width: 300px;
-      border-left: 4px solid #667eea;
-      animation: slideIn 0.3s ease;
-    }
-    .toast.success { border-left-color: #48bb78; }
-    .toast.error { border-left-color: #e53e3e; }
-    .toast.warning { border-left-color: #ed8936; }
-    .toast i { font-size: 1.2rem; }
-    .toast.success i { color: #48bb78; }
-    .toast.error i { color: #e53e3e; }
-    .toast.warning i { color: #ed8936; }
-    .toast.info i { color: #667eea; }
-    @keyframes slideIn {
-      from { transform: translateX(400px); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-    
-    /* Loading Overlay */
-    .loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(255,255,255,0.95);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      z-index: 2500;
-      gap: 1rem;
-    }
-    .loading-overlay.visible { display: flex; }
-    .spinner {
-      border: 4px solid #e2e8f0;
-      border-top: 4px solid #667eea;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    /* Utility */
-    .hidden { display: none !important; }
-    .text-sm { font-size: 0.85rem; }
-    .text-muted { color: #718096; }
-    .mb-1 { margin-bottom: 0.5rem; }
-    .mb-2 { margin-bottom: 1rem; }
-    .mt-2 { margin-top: 1rem; }
-    
-    /* Dark Mode */
-    body.dark-mode {
-      background: #1a202c;
-      color: #e2e8f0;
-    }
-    body.dark-mode .card {
-      background: #2d3748;
-      border-color: #4a5568;
-    }
-    body.dark-mode .page-header h1,
-    body.dark-mode .card-header {
-      color: #e2e8f0;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RAiA V15 Enterprise</title>
+
+  <!-- Fonts & Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <!-- Your main CSS -->
+  <link rel="stylesheet" href="styles.css"/>
 </head>
+
 <body>
+
   <!-- System Limitations Banner -->
   <div class="system-banner">
     <i class="fas fa-info-circle"></i>
@@ -777,7 +26,13 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <h1>RAiA</h1>
-        <div class="version">Version 14.2</div>
+        <div class="version">Version 15 Enterprise</div>
+      </div>
+      
+      <!-- SECTION 8: Training Mode Toggle -->
+      <div class="training-mode-toggle">
+        <input type="checkbox" id="trainingModeToggle">
+        <label for="trainingModeToggle">Training Mode</label>
       </div>
       
       <!-- Progress Indicator -->
@@ -854,49 +109,78 @@
     
     <!-- Main Content -->
     <main class="content">
+      <!-- SECTION 5: Error Banner -->
+      <div class="error-banner" id="errorBanner">
+        <div class="error-header">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span id="errorTitle">Error Occurred</span>
+        </div>
+        <div class="error-message" id="errorMessage"></div>
+        <div class="error-recovery" id="errorRecovery"></div>
+        <button class="button secondary" id="dismissError">Dismiss</button>
+      </div>
+      
       <!-- Dashboard Page -->
       <section id="page-dashboard" class="page active">
         <div class="page-header">
           <h1>Dashboard</h1>
-          <p>Create a new dossier or open an existing project to begin regulatory review.</p>
+          <p>Manage your regulatory dossiers and review activities.</p>
         </div>
         
-        <div class="card">
-          <div class="card-header">
-            <span><i class="fas fa-plus-circle"></i> Create New Dossier</span>
-          </div>
-          <div class="input-group">
-            <label for="newName">Dossier Name *</label>
-            <input id="newName" type="text" placeholder="e.g., Artemether-Lumefantrine 80/480mg Tablets">
-          </div>
-          <div class="input-group">
-            <label for="newAuthority">Regulatory Authority *</label>
-            <select id="newAuthority">
-              <option value="">Select authority...</option>
-              <option value="SAHPRA">SAHPRA (South Africa)</option>
-              <option value="TMDA">TMDA (Tanzania)</option>
-              <option value="BoMRA">BoMRA (Botswana)</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <label for="newPathway">Reliance Pathway *</label>
-            <select id="newPathway">
-              <option value="">Select pathway...</option>
-              <option value="Abridged">Abridged (Identical product)</option>
-              <option value="Verified">Verified (Minor differences)</option>
-              <option value="Recognition">Recognition (Direct acceptance)</option>
-            </select>
-          </div>
-          <button class="button" id="createDossierBtn">
-            <i class="fas fa-folder-plus"></i> Create Dossier
+        <!-- SECTION 1: Primary Action Card -->
+        <div id="primaryActionContainer"></div>
+        
+        <!-- SECTION 1: Toggle for Secondary Actions -->
+        <div class="toggle-secondary">
+          <button id="toggleSecondaryBtn">
+            <i class="fas fa-chevron-down"></i> Show All Dossiers
           </button>
         </div>
         
-        <div class="card">
-          <div class="card-header">
-            <span><i class="fas fa-folder-open"></i> Your Dossiers</span>
+        <!-- SECTION 1: Secondary Actions (Hidden by Default) -->
+        <div class="secondary-actions" id="secondaryActions">
+          <div class="card">
+            <div class="card-header">
+              <span><i class="fas fa-plus-circle"></i> Create New Dossier</span>
+            </div>
+            <div class="input-group">
+              <label for="newName">Dossier Name *</label>
+              <input id="newName" type="text" placeholder="e.g., Artemether-Lumefantrine 80/480mg Tablets">
+            </div>
+            <div class="input-group">
+              <label for="newAuthority">Regulatory Authority *</label>
+              <select id="newAuthority">
+                <option value="">Select authority...</option>
+                <option value="SAHPRA">SAHPRA (South Africa)</option>
+                <option value="TMDA">TMDA (Tanzania)</option>
+                <option value="BoMRA">BoMRA (Botswana)</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label for="newPathway">Reliance Pathway *</label>
+              <select id="newPathway">
+                <option value="">Select pathway...</option>
+                <option value="Abridged">Abridged (Identical product)</option>
+                <option value="Verified">Verified (Minor differences)</option>
+                <option value="Recognition">Recognition (Direct acceptance)</option>
+              </select>
+            </div>
+            <!-- SECTION 8: Training Hint -->
+            <div class="training-hint" id="hint-create-dossier">
+              <i class="fas fa-lightbulb hint-icon"></i>
+              <strong>Training Tip:</strong> Choose your reliance pathway carefully. "Abridged" requires identical products with sameness declarations, while "Verified" allows minor differences with justification.
+            </div>
+            <button class="button" id="createDossierBtn">
+              <i class="fas fa-folder-plus"></i> Create Dossier
+            </button>
           </div>
-          <div id="projectList"></div>
+          
+          <div class="card">
+            <div class="card-header">
+              <span><i class="fas fa-folder-open"></i> Your Dossiers</span>
+            </div>
+            <div id="projectList"></div>
+          </div>
         </div>
       </section>
       
@@ -914,6 +198,24 @@
             <div class="text-muted text-sm">Supports: PDF, DOC, DOCX, TXT, MD, CSV, JSON, Images, ZIP</div>
           </div>
           <input id="fileInput" type="file" multiple class="hidden" />
+          
+          <!-- SECTION 4: Upload Progress -->
+          <div class="upload-progress" id="uploadProgress">
+            <div class="upload-status">
+              <span id="uploadStatusText">Uploading files...</span>
+              <span id="uploadPercentage">0%</span>
+            </div>
+            <div class="upload-progress-bar">
+              <div class="upload-progress-fill" id="uploadProgressFill"></div>
+            </div>
+            <div class="upload-file-list" id="uploadFileList"></div>
+          </div>
+        </div>
+        
+        <!-- SECTION 8: Training Hint -->
+        <div class="training-hint" id="hint-file-upload">
+          <i class="fas fa-lightbulb hint-icon"></i>
+          <strong>Training Tip:</strong> Upload Module 1 (administrative) files first, then move to Modules 2-5. This helps maintain logical organization during CTD mapping.
         </div>
         
         <div class="card" id="filesCard">
@@ -952,6 +254,12 @@
             <div class="label">Mapping Complete</div>
             <div class="value" id="mappingPercent">0%</div>
           </div>
+        </div>
+        
+        <!-- SECTION 8: Training Hint -->
+        <div class="training-hint" id="hint-ctd-mapping">
+          <i class="fas fa-lightbulb hint-icon"></i>
+          <strong>Training Tip:</strong> Use "Suggest Mappings" to auto-assign files based on filenames. Always review suggestions before running compliance checks.
         </div>
         
         <div style="margin-bottom: 1rem;">
@@ -1000,6 +308,12 @@
             <i class="fas fa-download"></i> Export Dossier
           </button>
           <input id="importFile" type="file" accept="application/json" class="hidden" />
+        </div>
+        
+        <!-- SECTION 8: Training Hint -->
+        <div class="training-hint" id="hint-findings">
+          <i class="fas fa-lightbulb hint-icon"></i>
+          <strong>Training Tip:</strong> Critical findings must be resolved before approval. Use "Explain" to understand why each finding was flagged, then document your decision using Accept/Dispute buttons.
         </div>
         
         <div class="findings-dashboard" id="findingsDashboard">
@@ -1165,20 +479,7 @@
     </main>
   </div>
   
-  <!-- Onboarding Overlay -->
-  <div class="onboarding-overlay" id="onboardingOverlay">
-    <div class="onboarding-tooltip">
-      <h3 id="onboardingTitle">Welcome to RAiA</h3>
-      <div class="progress" id="onboardingProgress">Step 1 of 5</div>
-      <p id="onboardingText">RAiA helps you organize, review, and assess regulatory dossiers using reliance pathways. Let's take a quick tour.</p>
-      <div class="onboarding-actions">
-        <button class="button secondary" id="skipTourBtn">Skip Tour</button>
-        <button class="button" id="nextTourBtn">Next</button>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Modal for Learn More / Challenges -->
+  <!-- Modal -->
   <div class="modal" id="modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1197,360 +498,15 @@
     <div class="spinner"></div>
     <p style="margin-top: 1rem; color: #4a5568; font-weight: 500;">Processing...</p>
   </div>
-  
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
-  <script>
-    // Initialize Application State
-    const APP = {
-      projects: [],
-      currentIndex: null,
-      role: 'reviewer',
-      persist: false,
-      darkMode: false,
-      onboardingComplete: false,
-      knowledgeBase: [],
-      guidelines: {
-        SAHPRA: [
-          'Declare reliance pathway (Abridged/Verified) in Module 1',
-          'Submit required forms GLF-PEM-02L and GLF-PEM-02E',
-          'Provide unredacted assessment reports from EMA/FDA/TGA',
-          'Include Zone IVb stability data and API supplier documentation',
-          'Ensure labeling matches final RRA-approved version',
-          'Provide change log documenting differences from reference'
-        ],
-        TMDA: [
-          'Declare reliance pathway and reference authority in Module 1.2',
-          'Include sameness declaration and applicant consent',
-          'Provide unredacted RRA assessment reports within 60-90 days',
-          'Submit TMDA forms and fees in Module 1.10.3',
-          'Include local labeling compliant with TMDA requirements'
-        ],
-        BoMRA: [
-          'State RRA approval or ZAZIBONA recommendation with supporting proof',
-          'Submit BoMRA forms, fees, and local labeling',
-          'Provide full assessment reports or letter of authorization',
-          'Include Zone IVb stability data and bioequivalence reports',
-          'Attach valid GMP certificates for all manufacturing sites'
-        ]
-      }
-    };
-    
-    // CTD Structure Definition
-    const ctdStructure = [
-      {
-        id: 'm1',
-        name: 'Module 1: Administrative Information',
-        children: [
-          { id: 'm1-1', name: '1.1 Cover Letter' },
-          { id: 'm1-2', name: '1.2 Administrative & Prescribing Info' },
-          { id: 'm1-3', name: '1.3 Product Information' },
-          { id: 'm1-4', name: '1.4 Labeling' }
-        ]
-      },
-      {
-        id: 'm2',
-        name: 'Module 2: CTD Summaries',
-        children: [
-          { id: 'm2-3', name: '2.3 Quality Overall Summary' },
-          { id: 'm2-4', name: '2.4 Nonclinical Overview' },
-          { id: 'm2-5', name: '2.5 Clinical Overview' },
-          { id: 'm2-7', name: '2.7 Clinical Summary' }
-        ]
-      },
-      { id: 'm3', name: 'Module 3: Quality (CMC)' },
-      { id: 'm4', name: 'Module 4: Nonclinical Study Reports' },
-      { id: 'm5', name: 'Module 5: Clinical Study Reports' }
-    ];
-    
-    // Default Rules by Authority
-    const defaultRules = {
-      SAHPRA: [
-        {
-          id: 'SAHPRA-001',
-          pattern: /abridged|verified/i,
-          severity: 'critical',
-          category: 'Administrative',
-          message: 'Reliance pathway declaration missing or unclear',
-          impact: 3,
-          likelihood: 3,
-          citations: ['SAHPRA Reliance Guideline §1.2']
-        },
-        {
-          id: 'SAHPRA-002',
-          pattern: /zone ivb|stability/i,
-          severity: 'major',
-          category: 'Quality',
-          message: 'Zone IVb stability data missing',
-          impact: 2,
-          likelihood: 3,
-          citations: ['ICH Q1E for South Africa']
-        }
-      ],
-      TMDA: [
-        {
-          id: 'TMDA-001',
-          pattern: /sameness declaration/i,
-          severity: 'critical',
-          category: 'Administrative',
-          message: 'Sameness declaration (Module 1.2) missing or incomplete',
-          impact: 3,
-          likelihood: 3,
-          citations: ['TMDA Guidelines §1.2']
-        }
-      ],
-      BoMRA: [
-        {
-          id: 'BOMRA-001',
-          pattern: /zazibona|recommendation/i,
-          severity: 'critical',
-          category: 'Administrative',
-          message: 'ZAZIBONA recommendation or RRA approval not declared',
-          impact: 3,
-          likelihood: 2,
-          citations: ['BoMRA Reliance Guideline']
-        }
-      ]
-    };
-    
-    // Utility Functions
-    function showToast(message, type = 'info') {
-      const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      
-      let icon = 'fa-info-circle';
-      if (type === 'success') icon = 'fa-check-circle';
-      if (type === 'error') icon = 'fa-exclamation-circle';
-      if (type === 'warning') icon = 'fa-exclamation-triangle';
-      
-      toast.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span>`;
-      container.appendChild(toast);
-      
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-      }, 4000);
-      
-      // Log to audit trail
-      logAction(message);
-    }
-    
-    function showLoading() {
-      document.getElementById('loadingOverlay').classList.add('visible');
-    }
-    
-    function hideLoading() {
-      document.getElementById('loadingOverlay').classList.remove('visible');
-    }
-    
-    function setActivePage(pageId) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      
-      document.getElementById(pageId).classList.add('active');
-      const navId = pageId.replace('page-', 'nav-');
-      const navEl = document.getElementById(navId);
-      if (navEl) navEl.classList.add('active');
-      
-      updateProgress();
-    }
-    
-    function updateProgress() {
-      if (APP.currentIndex === null) {
-        document.getElementById('overallProgress').style.width = '0%';
-        document.getElementById('progressLabel').textContent = 'No dossier selected';
-        document.getElementById('progressPercent').textContent = '0%';
-        return;
-      }
-      
-      const proj = APP.projects[APP.currentIndex];
-      let score = 0;
-      
-      if (proj.files.length > 0) score += 25;
-      if (Object.keys(proj.ctdMapping || {}).length > 0) score += 25;
-      if (proj.findings && proj.findings.length > 0) score += 25;
-      if (proj.findings && proj.findings.some(f => f.status)) score += 25;
-      
-      document.getElementById('overallProgress').style.width = `${score}%`;
-      document.getElementById('progressPercent').textContent = `${score}%`;
-      
-      if (score === 0) document.getElementById('progressLabel').textContent = 'Upload files to begin';
-      else if (score === 25) document.getElementById('progressLabel').textContent = 'Map files to CTD';
-      else if (score === 50) document.getElementById('progressLabel').textContent = 'Run analysis';
-      else if (score === 75) document.getElementById('progressLabel').textContent = 'Review findings';
-      else document.getElementById('progressLabel').textContent = 'Ready to finalize';
-      
-      // Mark completed steps
-      document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('completed');
-      });
-      if (proj.files.length > 0) document.getElementById('nav-submit').classList.add('completed');
-      if (Object.keys(proj.ctdMapping || {}).length > 0) document.getElementById('nav-mapping').classList.add('completed');
-      if (proj.findings && proj.findings.length > 0) document.getElementById('nav-analysis').classList.add('completed');
-    }
-    
-    async function logAction(action) {
-      if (APP.currentIndex === null) return;
-      const proj = APP.projects[APP.currentIndex];
-      const entry = {
-        time: new Date().toISOString(),
-        action,
-        user: APP.role
-      };
-      
-      const prevHash = proj.historyHash || '';
-      const data = JSON.stringify(entry);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(prevHash + data));
-      const hash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-      
-      entry.hash = hash;
-      proj.historyHash = hash;
-      proj.history = proj.history || [];
-      proj.history.push(entry);
-      
-      saveApp();
-    }
-    
-    function saveApp() {
-      if (APP.persist) {
-        try {
-          const data = JSON.stringify(APP);
-          localStorage.setItem('raia_v15_state', data);
-        } catch (e) {
-          console.warn('Save failed', e);
-        }
-      }
-    }
-    
-    function loadApp() {
-      try {
-        const data = localStorage.getItem('raia_v15_state');
-        if (data) {
-          const parsed = JSON.parse(data);
-          Object.assign(APP, parsed);
-        }
-      } catch (e) {
-        console.warn('Load failed', e);
-      }
-    }
-    
-    // Initialize Application
-    function init() {
-      loadApp();
-      
-      // Set up navigation
-      document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const pageId = item.id.replace('nav-', 'page-');
-          
-          if (APP.currentIndex === null && !['page-dashboard', 'page-settings', 'page-help'].includes(pageId)) {
-            showToast('Please create or open a dossier first', 'warning');
-            return;
-          }
-          
-          setActivePage(pageId);
-          
-          if (pageId === 'page-submit') renderSubmitPage();
-          if (pageId === 'page-mapping') renderMappingPage();
-          if (pageId === 'page-analysis') renderAnalysisPage();
-          if (pageId === 'page-rules') renderRulesPage();
-          if (pageId === 'page-history') renderHistoryPage();
-        });
-      });
-      
-      // Create Dossier
-      document.getElementById('createDossierBtn').addEventListener('click', createDossier);
-      
-      // File upload
-      const dropzone = document.getElementById('dropzone');
-      const fileInput = document.getElementById('fileInput');
-      
-      dropzone.addEventListener('click', () => fileInput.click());
-      dropzone.addEventListener('dragover', e => {
-        e.preventDefault();
-        dropzone.style.borderColor = '#667eea';
-        dropzone.style.background = '#ebf4ff';
-      });
-      dropzone.addEventListener('dragleave', () => {
-        dropzone.style.borderColor = '';
-        dropzone.style.background = '';
-      });
-      dropzone.addEventListener('drop', e => {
-        e.preventDefault();
-        dropzone.style.borderColor = '';
-        dropzone.style.background = '';
-        handleFiles(e.dataTransfer.files);
-      });
-      fileInput.addEventListener('change', e => handleFiles(e.target.files));
-      
-      // Analysis
-      document.getElementById('runAnalysisBtn').addEventListener('click', runAnalysis);
-      
-      // Settings
-      document.getElementById('darkModeToggle').addEventListener('change', e => {
-        document.body.classList.toggle('dark-mode', e.target.checked);
-        APP.darkMode = e.target.checked;
-        saveApp();
-      });
-      
-      document.getElementById('persistToggle').addEventListener('change', e => {
-        APP.persist = e.target.checked;
-        if (APP.persist) saveApp();
-      });
-      
-      // Learn More Link
-      document.getElementById('learnMoreLink').addEventListener('click', e => {
-        e.preventDefault();
-        setActivePage('page-help');
-      });
-      
-      // Onboarding
-      if (!APP.onboardingComplete) {
-        setTimeout(() => showOnboarding(), 500);
-      }
-      
-      renderDashboard();
-      updateProgress();
-      
-      if (APP.darkMode) {
-        document.body.classList.add('dark-mode');
-        document.getElementById('darkModeToggle').checked = true;
-      }
-      if (APP.persist) {
-        document.getElementById('persistToggle').checked = true;
-      }
-    }
-    
-    // Create New Dossier
-    function createDossier() {
-      const name = document.getElementById('newName').value.trim();
-      const authority = document.getElementById('newAuthority').value;
-      const pathway = document.getElementById('newPathway').value;
-      
-      if (!name || !authority || !pathway) {
-        showToast('Please complete all required fields', 'error');
-        return;
-      }
-      
-      const project = {
-        name,
-        authority,
-        pathway,
-        files: [],
-        chunks: [],
-        ctdMapping: {},
-        findings: [],
-        history: [],
-        historyHash: '',
-        rules: null
-      };
-      
-      APP.projects.push(project);
-      APP.currentIndex = APP.projects.length - 1;
-      
-      saveApp();
-      showToast(`Dossier "${name}" created successfully`, 'success');
-      renderDashboard();
-      setActivePage('page-submit');
-      updateProgress();
+
+<!-- =========================================================
+ SCRIPTS
+========================================================= -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
+
+<!-- 👉 PASTE YOUR FULL JS LOGIC HERE -->
+<script src="app.js"></script>
+
+</body>
+</html>
